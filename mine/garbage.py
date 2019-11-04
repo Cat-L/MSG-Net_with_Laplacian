@@ -1,12 +1,5 @@
-import os
-import sys
-import time
-import numpy as np
-from tqdm import tqdm, trange
-
 import torch
-from torch.optim import Adam
-from torch.autograd import Variable
+
 from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,10 +7,9 @@ import torch.nn.functional as F
 from torchvision import datasets
 from torchvision import transforms
 
-import utils
-from net import Net, Vgg16
+from . import net.LapNet
 
-from option import Options
+
 
 
 class LapConv2d(nn.Conv2d):
@@ -105,8 +97,8 @@ if __name__ == '__main__':
     b=1
     for i in result[1]:
        b*=i
-    a=(2*mse_loss(result[0],result[1]))/b
+    a=(2*mse_loss(result[0],result[1]))/torch.numel(result[1])
     print(a.data)
 
 
-
+    a=net.L

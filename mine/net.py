@@ -28,33 +28,24 @@ class GramMatrix(nn.Module):
         gram = features.bmm(features_t) / (ch * h * w)
         return gram
 
-class LapLayer(nn.Module):
-    def __init__(self,kernel_size=3):
-        super(LapLayer, self).__init__()
+class LapConv2d(nn.Conv2d):
 
-        laplacian= np.array(
-            [ [0,-1,0],
-              [-1,4,-1],
-              [0,-1,0] ], dtype=np.float32 )
-        self.lapw=np.zeros((3,3,1,1),dtype=np.float32)
-        self.lapw[:,:,0,0]=laplacian
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, groups=1, bias=True,
+                 padding_mode='zeros'):
+        super(LapConv2d,self).__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode)
+        kernel = [[0, -1, 0],
+                  [-1, 4, -1],
+                  [0, -1, 0]]
 
-        self.lap_layer1=nn.Sequential(
-            nn.AvgPool2d(2),
-            nn.ReflectionPad2d(int(np.floor(kernel_size / 2))),
-            nn.functional.conv2d(3,self.lapw)
-        )
+        self.weight=nn.Parameter(torch.Tensor(kernel).expand(out_channels,in_channels//groups,kernel_size,kernel_size),requires_grad=False)
+        # self.kernel = torch.Tensor(kernel).expand(out_channels, in_channels // groups, 3)
+        # self.weight=nn.Parameter(self.kernel,requires_grad=False)
 
-        self.lap_layer2=nn.Sequential(
-            nn.AvgPool2d(4),
-            nn.ReflectionPad2d(int(np.floor(kernel_size / 2))),
-            nn.functional.conv2d(3,self.lapw)
-        )
-
-
-    def forward(self, *input):
-        y=self.lap_layer1(input)
-        return  self.lap_layer2(y)
+    def forward(self, input):
+        # print(self.weight)
+        # print(input.size())
+        return F.conv2d(input, self.weight, self.bias, self.stride,
+                        self.padding, self.dilation, self.groups)
 
 
 
@@ -247,7 +238,6 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.gpu_ids = gpu_ids
         self.gram = GramMatrix()
-        self.lap=LapLayer()
 
         block = Bottleneck
         upblock = UpBottleneck
@@ -286,5 +276,28 @@ class Net(nn.Module):
         return self.model(input)
 
 
+class LapNet(nn.Module):
+
+    def __init__(self):
+        super(LapNet,self).__init__()
+        self.lay1=nn.Sequential(
+            nn.AvgPool2d(2),
+            LapNet(3,3)
+        )
+
+        self.lay2=nn.Sequential(
+            nn.AvgPool2d(4),
+            LapNet(3,3)
+        )
+
+        self.lay3=nn.Sequential(
+            nn.AvgPool2d(8),
+            LapNet(3,3)
+        )
 
 
+    def forward(self, X):
+        lay1=self.lay1(X)
+        lay2=self.lay2(lay1)
+        lay3=self.lay3(lay2)
+        return lay3
