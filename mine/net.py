@@ -33,22 +33,15 @@ class LapConv2d(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, groups=1, bias=True,
                  padding_mode='zeros'):
         super(LapConv2d,self).__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode)
+
         kernel = [[0, -1, 0],
                   [-1, 4, -1],
                   [0, -1, 0]]
-
         self.weight=nn.Parameter(torch.Tensor(kernel).expand(out_channels,in_channels//groups,kernel_size,kernel_size),requires_grad=False)
-        # self.kernel = torch.Tensor(kernel).expand(out_channels, in_channels // groups, 3)
-        # self.weight=nn.Parameter(self.kernel,requires_grad=False)
 
     def forward(self, input):
-        # print(self.weight)
-        # print(input.size())
         return F.conv2d(input, self.weight, self.bias, self.stride,
                         self.padding, self.dilation, self.groups)
-
-
-
 
 class Bottleneck(nn.Module):
     """ Pre-activation residual block
@@ -82,7 +75,6 @@ class Bottleneck(nn.Module):
             residual = x
         return residual + self.conv_block(x)
 
-
 class UpBottleneck(nn.Module):
     """ Up-sample residual block (from MSG-Net paper)
     Enables passing identity all the way through the generator
@@ -109,7 +101,6 @@ class UpBottleneck(nn.Module):
     def forward(self, x):
         return self.residual_layer(x) + self.conv_block(x)
 
-
 class ConvLayer(torch.nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride):
         super(ConvLayer, self).__init__()
@@ -121,7 +112,6 @@ class ConvLayer(torch.nn.Module):
         out = self.reflection_pad(x)
         out = self.conv2d(out)
         return out
-
 
 class UpsampleConvLayer(torch.nn.Module):
     """UpsampleConvLayer
@@ -151,7 +141,6 @@ class UpsampleConvLayer(torch.nn.Module):
             x = self.reflection_pad(x)
         out = self.conv2d(x)
         return out
-
 
 class Inspiration(nn.Module):
     """ Inspiration Layer (from MSG-Net paper)
@@ -185,6 +174,32 @@ class Inspiration(nn.Module):
     def __repr__(self):
         return self.__class__.__name__ + '(' \
                + 'N x ' + str(self.C) + ')'
+
+
+
+
+class LapNet(nn.Module):
+    def __init__(self):
+        super(LapNet,self).__init__()
+        self.lay1=nn.Sequential(
+            nn.AvgPool2d(2),
+            LapConv2d(3,3)
+        )
+
+        self.lay2=nn.Sequential(
+            nn.AvgPool2d(4),
+            LapConv2d(3,3)
+        )
+
+        self.lay3=nn.Sequential(
+            nn.AvgPool2d(8),
+            LapConv2d(3,3)
+        )
+    def forward(self, X):
+        lay1=self.lay1(X)
+        lay2=self.lay2(lay1)
+        lay3=self.lay3(lay2)
+        return lay3
 
 
 class Vgg16(torch.nn.Module):
@@ -276,28 +291,3 @@ class Net(nn.Module):
         return self.model(input)
 
 
-class LapNet(nn.Module):
-
-    def __init__(self):
-        super(LapNet,self).__init__()
-        self.lay1=nn.Sequential(
-            nn.AvgPool2d(2),
-            LapNet(3,3)
-        )
-
-        self.lay2=nn.Sequential(
-            nn.AvgPool2d(4),
-            LapNet(3,3)
-        )
-
-        self.lay3=nn.Sequential(
-            nn.AvgPool2d(8),
-            LapNet(3,3)
-        )
-
-
-    def forward(self, X):
-        lay1=self.lay1(X)
-        lay2=self.lay2(lay1)
-        lay3=self.lay3(lay2)
-        return lay3
