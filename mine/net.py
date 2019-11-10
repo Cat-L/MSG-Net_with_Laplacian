@@ -12,6 +12,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
 from torch.autograd import Variable
 
 
@@ -247,6 +248,29 @@ class Vgg16(torch.nn.Module):
 
         return [relu1_2, relu2_2, relu3_3, relu4_3]
 
+
+def VGG16_from_pth(vgg16,x):
+    vgg16=vgg16.features
+
+    mo1 = nn.Sequential(*list(vgg16.children())[:4])
+    mo2 = nn.Sequential(*list(vgg16.children())[4:9])
+    mo3 = nn.Sequential(*list(vgg16.children())[9:16])
+    mo4 = nn.Sequential(*list(vgg16.children())[16:23])
+
+    features=[]
+    x=torch.zeros()
+
+    x=mo1(x).view(x.size(0), -1)
+    features.append(x)
+
+    x=mo2(x).view(x.size(0), -1)
+    features.append(x)
+
+    x = mo3(x).view(x.size(0), -1)
+    features.append(x)
+
+    x = mo4(x).view(x.size(0), -1)
+    features.append(x)
 
 class Net(nn.Module):
     def __init__(self, input_nc=3, output_nc=3, ngf=64, norm_layer=nn.InstanceNorm2d, n_blocks=6, gpu_ids=[]):

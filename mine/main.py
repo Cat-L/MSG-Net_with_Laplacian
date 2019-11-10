@@ -19,11 +19,12 @@ from torch.optim import Adam
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
+import torchvision
 from torchvision import datasets
 from torchvision import transforms
 
 import utils
-from net import Net, Vgg16,LapNet
+from net import Net, Vgg16,LapNet,VGG16_from_pth
 
 from option import Options
 
@@ -76,9 +77,9 @@ def train():
 
 	#载入数据集
 	transform = transforms.Compose([transforms.Scale(256),
-																	transforms.CenterCrop(256),
-																	transforms.ToTensor(),
-																	transforms.Lambda(lambda x: x.mul(255))])
+									transforms.CenterCrop(256),
+									transforms.ToTensor(),
+									transforms.Lambda(lambda x: x.mul(255))])
 	train_dataset = datasets.ImageFolder(DATASET, transform)
 	train_loader = DataLoader(train_dataset, 4, **kwargs)
 
@@ -90,15 +91,20 @@ def train():
 	optimizer = Adam(style_model.parameters(), LR)
 	mse_loss = torch.nn.MSELoss()
 
+	lap = LapNet()
 	# 创建后半部分模型:用于提取特征的VGG16
-	vgg = Vgg16()
-	lap=LapNet()
-	utils.init_vgg16(VGG_MODEL_DIR)
-	vgg.load_state_dict(torch.load(os.path.join(VGG_MODEL_DIR, "vgg16.weight")))
+	# vgg = Vgg16()
+	# utils.init_vgg16(VGG_MODEL_DIR)
+	# vgg.load_state_dict(torch.load(os.path.join(VGG_MODEL_DIR, "vgg16.weight")))
+
+	vgg = torchvision.models.vgg16(pretrained=False)
+	utils.init_vgg16_from_pth(VGG_MODEL_DIR)
+	vgg.load_state_dict(torch.load(os.path.join(VGG_MODEL_DIR, 'vgg16.pth')))
+
 
 	style_model.cuda()
 	vgg.cuda()
-
+	lap.cuda()
 	# 载入风格图片
 	style_loader = utils.StyleLoader(STYLE_FOLDER,512)
 
@@ -130,7 +136,7 @@ def train():
 
 			# 提取这张图片的Gram（风格信息）
 			style_v = utils.subtract_imagenet_mean_batch(style_v)
-			features_style = vgg(style_v)
+			features_style = VGG16_from_pth(vgg,style_v)
 			gram_style = [utils.gram_matrix(y) for y in features_style]
 
 			y = style_model(x)
@@ -141,8 +147,8 @@ def train():
 			xc = utils.subtract_imagenet_mean_batch(xc)
 
 			# 提取特征(应该是在这个VGG里面添加lap_layer )
-			features_y = vgg(y)
-			features_xc = vgg(xc)
+			features_y = VGG16_from_pth(vgg,y)
+			features_xc = VGG16_from_pth(vgg,xc)
 
 			f_xc_c = Variable(features_xc[1].data, requires_grad=False)
 

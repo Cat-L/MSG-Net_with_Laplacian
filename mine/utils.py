@@ -15,6 +15,8 @@ import torch
 from PIL import Image
 from torch.autograd import Variable
 from torchfile import load as load_lua
+import torchvision
+import torch.nn as nn
 
 from net import Vgg16
 
@@ -102,6 +104,27 @@ def init_vgg16(model_folder):
         for (src, dst) in zip(vgglua.parameters()[0], vgg.parameters()):
             dst.data[:] = src
         torch.save(vgg.state_dict(), os.path.join(model_folder, 'vgg16.weight'))
+
+def fix_pth_vgg_16(path):
+    sd = torch.load("F:\\vgg_model\\vgg16-00b39a1b.pth")
+    sd['classifier.0.weight'] = sd['classifier.1.weight']
+    sd['classifier.0.bias'] = sd['classifier.1.bias']
+    del sd['classifier.1.weight']
+    del sd['classifier.1.bias']
+
+    sd['classifier.3.weight'] = sd['classifier.4.weight']
+    sd['classifier.3.bias'] = sd['classifier.4.bias']
+    del sd['classifier.4.weight']
+    del sd['classifier.4.bias']
+
+    torch.save(sd, path)
+
+def init_vgg16_from_pth(model_folder):
+    if not os.path.exists(os.path.join(model_folder, 'vgg16.weight')):
+        if not os.path.exists(os.path.join(model_folder, 'vgg16.pth')):
+            os.system('wget  https://s3-us-west-2.amazonaws.com/jcjohns-models/vgg16-00b39a1b.pth -O ' + os.path.join(
+                model_folder, 'vgg16.pth'))
+            fix_pth_vgg_16(os.path.join(model_folder, 'vgg16.pth'))
 
 
 class StyleLoader():
