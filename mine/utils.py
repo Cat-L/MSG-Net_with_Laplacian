@@ -106,7 +106,7 @@ def init_vgg16(model_folder):
         torch.save(vgg.state_dict(), os.path.join(model_folder, 'vgg16.weight'))
 
 def fix_pth_vgg_16(path):
-    sd = torch.load("F:\\vgg_model\\vgg16-00b39a1b.pth")
+    sd = torch.load(path)
     sd['classifier.0.weight'] = sd['classifier.1.weight']
     sd['classifier.0.bias'] = sd['classifier.1.bias']
     del sd['classifier.1.weight']

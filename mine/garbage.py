@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
 
+import utils
 from torchvision import datasets
 from torchvision import transforms
 
@@ -59,42 +60,42 @@ def my_forward(model, x):
 
 if __name__ == '__main__':
 
-    dataset="F:\COCO"
-    # 载入数据集
-    transform = transforms.Compose([transforms.Scale(256),
-                                    transforms.CenterCrop(256),
-                                    transforms.ToTensor(),
-                                    transforms.Lambda(lambda x: x.mul(255))])
-    train_dataset = datasets.ImageFolder(dataset, transform)
-    train_loader = DataLoader(train_dataset, batch_size=2)
-
-
-    # # vgglua = load_lua(os.path.join("F:\\vgg_model", 'vgg16.t7'), force_8bytes_long=True)
-    # # print(type(vgglua))
-    # # vgg = Vgg16()
-    # # for (src, dst) in zip(vgglua, vgg.parameters()):
-    # #     dst.data[:] = src
+    # dataset="F:\COCO"
+    # # 载入数据集
+    # transform = transforms.Compose([transforms.Scale(256),
+    #                                 transforms.CenterCrop(256),
+    #                                 transforms.ToTensor(),
+    #                                 transforms.Lambda(lambda x: x.mul(255))])
+    # train_dataset = datasets.ImageFolder(dataset, transform)
+    # train_loader = DataLoader(train_dataset, batch_size=2)
     #
-    for batch_id, (x, _) in enumerate(train_loader):
-        a=x
-        break
+    #
+    # # # vgglua = load_lua(os.path.join("F:\\vgg_model", 'vgg16.t7'), force_8bytes_long=True)
+    # # # print(type(vgglua))
+    # # # vgg = Vgg16()
+    # # # for (src, dst) in zip(vgglua, vgg.parameters()):
+    # # #     dst.data[:] = src
+    # #
+    # for batch_id, (x, _) in enumerate(train_loader):
+    #     a=x
+    #     break
 
-
+    # utils.fix_pth_vgg_16(os.path.join("F:\\vgg_model", 'vgg16-00b39a1b.pth'))
     vgg_=torchvision.models.vgg16(pretrained=False)
-    vgg_.load_state_dict(torch.load("vgg16-00b39a1b.pth"))
+    vgg_.load_state_dict(torch.load(os.path.join("F:\\vgg_model", 'vgg16-00b39a1b.pth')))
     vgg_=vgg_.features
 
-    mo1 = nn.Sequential(*list(vgg_.children())[:4])
-    mo2 = nn.Sequential(*list(vgg_.children())[:9])
-    mo3 = nn.Sequential(*list(vgg_.children())[:19])
-    mo4 = nn.Sequential(*list(vgg_.children())[:23])
+    # mo1 = nn.Sequential(*list(vgg_.children())[:4])
+    # mo2 = nn.Sequential(*list(vgg_.children())[:9])
+    # mo3 = nn.Sequential(*list(vgg_.children())[:19])
+    # mo4 = nn.Sequential(*list(vgg_.children())[:23])
+    #
+    # features=[]
+    #
+    # features.append(mo1(x).view(x.size(0), -1))
+    # features.append(mo2(x).view(x.size(0), -1))
+    # features.append(mo3(x).view(x.size(0), -1))
+    # features.append(mo4(x).view(x.size(0), -1))
 
-    features=[]
 
-    features.append(mo1(x).view(x.size(0), -1))
-    features.append(mo2(x).view(x.size(0), -1))
-    features.append(mo3(x).view(x.size(0), -1))
-    features.append(mo4(x).view(x.size(0), -1))
-
-
-    print(features)
+    # print(features)

@@ -99,7 +99,7 @@ def train():
 
 	vgg = torchvision.models.vgg16(pretrained=False)
 	utils.init_vgg16_from_pth(VGG_MODEL_DIR)
-	vgg.load_state_dict(torch.load(os.path.join(VGG_MODEL_DIR, 'vgg16.pth')))
+	vgg.load_state_dict(torch.load(os.path.join(VGG_MODEL_DIR, 'vgg16-00b39a1b.pth')))
 
 
 	style_model.cuda()
