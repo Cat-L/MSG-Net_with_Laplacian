@@ -3,7 +3,7 @@ import  os
 from net import Vgg16
 from torchfile import load as load_lua
 
-
+from torchsnooper import snoop
 import os
 
 import torch
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     # utils.fix_pth_vgg_16(os.path.join("F:\\vgg_model", 'vgg16-00b39a1b.pth'))
     vgg_=torchvision.models.vgg16(pretrained=False)
     vgg_.load_state_dict(torch.load(os.path.join("F:\\vgg_model", 'vgg16-00b39a1b.pth')))
-    vgg_=vgg_.features
+    vgg_.cuda()
 
     # mo1 = nn.Sequential(*list(vgg_.children())[:4])
     # mo2 = nn.Sequential(*list(vgg_.children())[:9])
@@ -99,3 +99,36 @@ if __name__ == '__main__':
 
 
     # print(features)
+    STYLE_FOLDER = "F:\\style"
+    style_loader = utils.StyleLoader(STYLE_FOLDER, 512)
+    i= style_loader.get(1)
+    i=i.cuda()
+
+    # @snoop()
+    def VGG16_from_pth(vgg16, x):
+
+        vgg16 = vgg16.features
+
+        mo1 = nn.Sequential(*list(vgg16.children())[:4])
+        mo2 = nn.Sequential(*list(vgg16.children())[4:9])
+        mo3 = nn.Sequential(*list(vgg16.children())[9:16])
+        mo4 = nn.Sequential(*list(vgg16.children())[16:23])
+
+        features=[]
+
+        x = mo1(x)
+        features.append(x)
+
+        x = mo2(x)
+        features.append(x)
+
+        x = mo3(x)
+        features.append(x)
+
+        x = mo4(x)
+        features.append(x)
+        return features
+
+    fea= VGG16_from_pth(vgg_,i)
+    for i in fea:
+        print(i.size(),"\n\n\n\n",i.data,"\n\n\n\n")

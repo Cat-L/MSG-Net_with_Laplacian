@@ -8,6 +8,8 @@
 ## LICENSE file in the root directory of this source tree
 ##+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+import torchsnooper
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -148,13 +150,12 @@ class Inspiration(nn.Module):
     tuning the featuremap with target Gram Matrix
     ref https://arxiv.org/abs/1703.06953
     """
-
     def __init__(self, C, B=1):
         super(Inspiration, self).__init__()
         # B is equal to 1 or input mini_batch
-        self.weight = nn.Parameter(torch.Tensor(1, C, C), requires_grad=True)
+        self.weight = nn.Parameter(torch.Tensor(1,C,C), requires_grad=True)
         # non-parameter buffer
-        self.G = Variable(torch.Tensor(B, C, C), requires_grad=True)
+        self.G = Variable(torch.Tensor(B,C,C), requires_grad=True)
         self.C = C
         self.reset_parameters()
 
@@ -166,15 +167,13 @@ class Inspiration(nn.Module):
 
     def forward(self, X):
         # input X is a 3D feature map
-        self.P = (self.weight.expand_as(self.G), self.G)
-        return torch.bmm(
-            self.P.transpose(1, 2).expand(X.size(0), self.C, self.C),
-            X.view(X.size(0), X.size(1), -1)
-        ).view_as(X)
+        self.P = torch.bmm(self.weight.expand_as(self.G),self.G)
+        return torch.bmm(self.P.transpose(1,2).expand(X.size(0), self.C, self.C), X.view(X.size(0),X.size(1),-1)).view_as(X)
 
     def __repr__(self):
         return self.__class__.__name__ + '(' \
-               + 'N x ' + str(self.C) + ')'
+            + 'N x ' + str(self.C) + ')'
+
 
 
 
@@ -249,28 +248,28 @@ class Vgg16(torch.nn.Module):
         return [relu1_2, relu2_2, relu3_3, relu4_3]
 
 
-def VGG16_from_pth(vgg16,x):
-    vgg16=vgg16.features
+def VGG16_from_pth(vgg16, x):
+    vgg16 = vgg16.features
 
     mo1 = nn.Sequential(*list(vgg16.children())[:4])
     mo2 = nn.Sequential(*list(vgg16.children())[4:9])
     mo3 = nn.Sequential(*list(vgg16.children())[9:16])
     mo4 = nn.Sequential(*list(vgg16.children())[16:23])
 
-    features=[]
-    x=torch.zeros()
+    features = []
 
-    x=mo1(x).view(x.size(0), -1)
+    x = mo1(x)
     features.append(x)
 
-    x=mo2(x).view(x.size(0), -1)
+    x = mo2(x)
     features.append(x)
 
-    x = mo3(x).view(x.size(0), -1)
+    x = mo3(x)
     features.append(x)
 
-    x = mo4(x).view(x.size(0), -1)
+    x = mo4(x)
     features.append(x)
+    return features
 
 class Net(nn.Module):
     def __init__(self, input_nc=3, output_nc=3, ngf=64, norm_layer=nn.InstanceNorm2d, n_blocks=6, gpu_ids=[]):
@@ -283,7 +282,7 @@ class Net(nn.Module):
         expansion = 4
 
         model1 = []
-        model1 += [ConvLayer(input_nc, 64, kernel_size=7, stride=1),
+        model1 += [ConvLayer(3, 64, kernel_size=7, stride=1),
                    norm_layer(64),
                    nn.ReLU(inplace=True),
                    block(64, 32, 2, 1, norm_layer),
@@ -306,6 +305,7 @@ class Net(nn.Module):
 
         self.model = nn.Sequential(*model)
 
+    # @torchsnooper.snoop()
     def setTarget(self, Xs):
         F = self.model1(Xs)
         G = self.gram(F)

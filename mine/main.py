@@ -80,11 +80,12 @@ def train():
 									transforms.CenterCrop(256),
 									transforms.ToTensor(),
 									transforms.Lambda(lambda x: x.mul(255))])
+
 	train_dataset = datasets.ImageFolder(DATASET, transform)
 	train_loader = DataLoader(train_dataset, 4, **kwargs)
 
 	# 创建前半部分模型：multi- style generative 多风格生成网络
-	style_model = Net(128)
+	style_model = Net(64)
 	# 载入模型数据
 	print(style_model)
 	# 设定优化器
@@ -130,6 +131,8 @@ def train():
 
 			# 从这批图里取第i张作为这次模型的目标
 			style_v = style_loader.get(batch_id)
+
+			style_v=style_v.cuda()
 			style_model.setTarget(style_v)
 
 
