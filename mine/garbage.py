@@ -99,36 +99,49 @@ if __name__ == '__main__':
 
 
     # print(features)
-    STYLE_FOLDER = "F:\\style"
-    style_loader = utils.StyleLoader(STYLE_FOLDER, 512)
-    i= style_loader.get(1)
-    i=i.cuda()
+    # STYLE_FOLDER = "F:\\style"
+    # style_loader = utils.StyleLoader(STYLE_FOLDER, 512)
+    # i= style_loader.get(1)
+    # i=i.cuda()
+    #
+    # # @snoop()
+    # def VGG16_from_pth(vgg16, x):
+    #
+    #     vgg16 = vgg16.features
+    #
+    #     mo1 = nn.Sequential(*list(vgg16.children())[:4])
+    #     mo2 = nn.Sequential(*list(vgg16.children())[4:9])
+    #     mo3 = nn.Sequential(*list(vgg16.children())[9:16])
+    #     mo4 = nn.Sequential(*list(vgg16.children())[16:23])
+    #
+    #     features=[]
+    #
+    #     x = mo1(x)
+    #     features.append(x)
+    #
+    #     x = mo2(x)
+    #     features.append(x)
+    #
+    #     x = mo3(x)
+    #     features.append(x)
+    #
+    #     x = mo4(x)
+    #     features.append(x)
+    #     return features
+    #
+    # fea= VGG16_from_pth(vgg_,i)
+    # for i in fea:
+    #     print(i.size(),"\n\n\n\n",i.data,"\n\n\n\n")
 
-    # @snoop()
-    def VGG16_from_pth(vgg16, x):
+    DATASET="F:\COCO"
+    transform = transforms.Compose([transforms.Scale(256),
+                                    transforms.CenterCrop(256),
+                                    transforms.ToTensor(),
+                                    transforms.Lambda(lambda x: x.mul(255))])
 
-        vgg16 = vgg16.features
+    train_dataset = datasets.ImageFolder(DATASET, transform)
+    train_loader = DataLoader(train_dataset, 4)
 
-        mo1 = nn.Sequential(*list(vgg16.children())[:4])
-        mo2 = nn.Sequential(*list(vgg16.children())[4:9])
-        mo3 = nn.Sequential(*list(vgg16.children())[9:16])
-        mo4 = nn.Sequential(*list(vgg16.children())[16:23])
 
-        features=[]
 
-        x = mo1(x)
-        features.append(x)
-
-        x = mo2(x)
-        features.append(x)
-
-        x = mo3(x)
-        features.append(x)
-
-        x = mo4(x)
-        features.append(x)
-        return features
-
-    fea= VGG16_from_pth(vgg_,i)
-    for i in fea:
-        print(i.size(),"\n\n\n\n",i.data,"\n\n\n\n")
+    print(train_loader.__iter__().__next__())
