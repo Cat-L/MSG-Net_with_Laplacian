@@ -70,7 +70,7 @@ LAP_WEIGHT=10.0
 
 def train():
 
-    writer=SummaryWriter('./runs/scalar')
+    writer=SummaryWriter('./runs')
 
     # 设定随机数种子
     np.random.seed(42)
@@ -115,9 +115,9 @@ def train():
     # 载入风格图片
     style_loader = utils.StyleLoader(STYLE_FOLDER,512)
 
-    writer.add_graph(style_model, (style_loader.get(1),))
-    writer.add_graph(vgg,(train_loader.__iter__().__next__(),))
-    writer.add_graph(lap,(train_loader.__iter__().__next__(),))
+    # writer.add_graph(style_model, (style_loader.get(1),))
+    # writer.add_graph(vgg,(train_loader.__iter__().__next__(),))
+    # writer.add_graph(lap,(train_loader.__iter__().__next__(),))
 
 
     tbar = trange(2)

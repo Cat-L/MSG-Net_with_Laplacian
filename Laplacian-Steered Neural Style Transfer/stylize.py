@@ -120,7 +120,9 @@ def stylize(network, initial, initial_noiseblend, content, styles, preserve_colo
         for content_layer in CONTENT_LAYERS:
             if 'lap' in content_layer:
 
-                loss = lap_weight *(2 * tf.nn.l2_loss( net[content_layer] - content_features[content_layer] )
+                loss = lap_weight *(2 *
+                                    tf.nn.l2_loss(
+                                        net[content_layer] - content_features[content_layer] )
                         /content_features[content_layer].size )
 
                 lap_losses.append(loss)

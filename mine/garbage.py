@@ -1,48 +1,45 @@
-import torchvision
-import  os
-from net import Vgg16
 from torchfile import load as load_lua
 
-from torchsnooper import snoop
-import os
-
+import os,time
 import torch
-from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
+from tqdm import trange
+from net import Vgg16
+from tqdm import tqdm
 
-import utils
-from torchvision import datasets
-from torchvision import transforms
-
-from net import Net, Vgg16
-
-
-
+DATASET="L:\COCO"
+VGG_MODEL_DIR="L:/vgg_model"
+STYLE_FOLDER="L:/style"
+MODEL_SAVE_DIR="L:/model_save"
 
 def init_vgg16(model_folder):
     """load the vgg16 model feature"""
     if not os.path.exists(os.path.join(model_folder, 'vgg16.weight')):
         if not os.path.exists(os.path.join(model_folder, 'vgg16.t7')):
             os.system(
-                'wget http://cs.stanford.edu/people/jcjohns/fast-neural-style/models/vgg16.t7  ' + os.path.join(model_folder, 'vgg16.t7'))
+                'wget http://cs.stanford.edu/people/jcjohns/fast-neural-style/models/vgg16.t7  ' + os.path.join(
+                    model_folder, 'vgg16.t7'))
         vgglua = load_lua(os.path.join(model_folder, 'vgg16.t7'), force_8bytes_long=True)
         vgg = Vgg16()
         for (src, dst) in zip(vgglua.parameters()[0], vgg.parameters()):
             dst.data[:] = src
         torch.save(vgg.state_dict(), os.path.join(model_folder, 'vgg16.weight'))
 
+
 class LapConv2d(nn.Conv2d):
 
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1, groups=1, bias=True,
                  padding_mode='zeros'):
-        super(LapConv2d,self).__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias, padding_mode)
+        super(LapConv2d, self).__init__(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias,
+                                        padding_mode)
         kernel = [[0, -1, 0],
                   [-1, 4, -1],
                   [0, -1, 0]]
 
-
-        self.weight=nn.Parameter(torch.Tensor(kernel).expand(out_channels,in_channels//groups,kernel_size,kernel_size),requires_grad=False)
+        self.weight = nn.Parameter(
+            torch.Tensor(kernel).expand(out_channels, in_channels // groups, kernel_size, kernel_size),
+            requires_grad=False)
         # self.kernel = torch.Tensor(kernel).expand(out_channels, in_channels // groups, 3)
         # self.weight=nn.Parameter(self.kernel,requires_grad=False)
 
@@ -55,11 +52,18 @@ def my_forward(model, x):
     mo = nn.Sequential(*list(model.children())[:-1])
     feature = mo(x)
     feature = feature.view(x.size(0), -1)
-    output= model.fc(feature)
+    output = model.fc(feature)
     return feature, output
 
-if __name__ == '__main__':
+#
+# DATASET = "L:\COCO"
+# VGG_MODEL_DIR = "L:/vgg_model"
+# STYLE_FOLDER = "F:\images\9styles"
+# CONTENT_FOLDER = "F:\images\content"
+# MODEL_SAVE_DIR = "L:/model_save"
+# IMAGE_DIR="F:\images\\"
 
+if __name__ == '__main__':
     # dataset="F:\COCO"
     # # 载入数据集
     # transform = transforms.Compose([transforms.Scale(256),
@@ -68,80 +72,14 @@ if __name__ == '__main__':
     #                                 transforms.Lambda(lambda x: x.mul(255))])
     # train_dataset = datasets.ImageFolder(dataset, transform)
     # train_loader = DataLoader(train_dataset, batch_size=2)
-    #
-    #
-    # # # vgglua = load_lua(os.path.join("F:\\vgg_model", 'vgg16.t7'), force_8bytes_long=True)
-    # # # print(type(vgglua))
-    # # # vgg = Vgg16()
-    # # # for (src, dst) in zip(vgglua, vgg.parameters()):
-    # # #     dst.data[:] = src
-    # #
-    # for batch_id, (x, _) in enumerate(train_loader):
-    #     a=x
-    #     break
 
-    # utils.fix_pth_vgg_16(os.path.join("F:\\vgg_model", 'vgg16-00b39a1b.pth'))
-    vgg_=torchvision.models.vgg16(pretrained=False)
-    vgg_.load_state_dict(torch.load(os.path.join("F:\\vgg_model", 'vgg16-00b39a1b.pth')))
-    vgg_.cuda()
-
-    # mo1 = nn.Sequential(*list(vgg_.children())[:4])
-    # mo2 = nn.Sequential(*list(vgg_.children())[:9])
-    # mo3 = nn.Sequential(*list(vgg_.children())[:19])
-    # mo4 = nn.Sequential(*list(vgg_.children())[:23])
+    # file1 = 'F:\images\content\\flowers.jpg'
+    # file2 = 'F:\images\9styles\candy.jpg'
     #
-    # features=[]
-    #
-    # features.append(mo1(x).view(x.size(0), -1))
-    # features.append(mo2(x).view(x.size(0), -1))
-    # features.append(mo3(x).view(x.size(0), -1))
-    # features.append(mo4(x).view(x.size(0), -1))
-
-
-    # print(features)
-    # STYLE_FOLDER = "F:\\style"
-    # style_loader = utils.StyleLoader(STYLE_FOLDER, 512)
-    # i= style_loader.get(1)
-    # i=i.cuda()
-    #
-    # # @snoop()
-    # def VGG16_from_pth(vgg16, x):
-    #
-    #     vgg16 = vgg16.features
-    #
-    #     mo1 = nn.Sequential(*list(vgg16.children())[:4])
-    #     mo2 = nn.Sequential(*list(vgg16.children())[4:9])
-    #     mo3 = nn.Sequential(*list(vgg16.children())[9:16])
-    #     mo4 = nn.Sequential(*list(vgg16.children())[16:23])
-    #
-    #     features=[]
-    #
-    #     x = mo1(x)
-    #     features.append(x)
-    #
-    #     x = mo2(x)
-    #     features.append(x)
-    #
-    #     x = mo3(x)
-    #     features.append(x)
-    #
-    #     x = mo4(x)
-    #     features.append(x)
-    #     return features
-    #
-    # fea= VGG16_from_pth(vgg_,i)
-    # for i in fea:
-    #     print(i.size(),"\n\n\n\n",i.data,"\n\n\n\n")
-
-    DATASET="F:\COCO"
-    transform = transforms.Compose([transforms.Scale(256),
-                                    transforms.CenterCrop(256),
-                                    transforms.ToTensor(),
-                                    transforms.Lambda(lambda x: x.mul(255))])
-
-    train_dataset = datasets.ImageFolder(DATASET, transform)
-    train_loader = DataLoader(train_dataset, 4)
-
-
-
-    print(train_loader.__iter__().__next__())
+    # # print(os.path.splitext(os.path.split(file1)[-1])[0])
+    # filepath = 'F:\model_save\Final_epoch_2_Wed_Nov_13_06_16_15_2019_1.0_100.0.model'
+    # model_name= os.path.splitext(os.path.split(filepath)[-1])[0]
+    # print(os.path.join(IMAGE_DIR,model_name))
+    # os.mkdir(path=os.path.join(IMAGE_DIR,model_name))
+    for i in  tqdm(range(10000000000),dynamic_ncols=True):
+        print(i)

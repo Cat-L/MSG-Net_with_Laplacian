@@ -118,8 +118,8 @@ class StyleLoader():
         style = style.unsqueeze(0)
         style = preprocess_batch(style)
 				# todo
-        # if self.cuda:
-        #     style = style.cuda()
+        if self.cuda:
+            style = style.cuda()
         style_v = Variable(style, requires_grad=False)
         return style_v
 
