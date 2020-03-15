@@ -1,5 +1,5 @@
 import os
-import torchsnooper
+
 
 import numpy as np
 import torch
@@ -141,3 +141,33 @@ def init_vgg16_from_pth(model_folder):
                 model_folder, 'vgg16.pth'))
             fix_pth_vgg_16(os.path.join(model_folder, 'vgg16.pth'))
 
+def get_finalmodel(model_save_dir):
+    pathDir = os.listdir(model_save_dir)
+    eachName = []
+    for allDir in pathDir:
+        if re.match(r'^Final', allDir):
+            eachName.append(os.path.join('%s\%s' % (model_save_dir, allDir)))
+        eachName.sort()
+    return eachName
+
+
+def eachFile(filepath):
+    pathDir = os.listdir(filepath)
+    eachName = []
+    for allDir in pathDir:
+        eachName.append(os.path.join('%s\%s' % (filepath, allDir)))
+    return eachName
+
+
+def remix_name(image_folder, content_name, style_name):
+    # all the path is the full path in windows
+    content_name = os.path.splitext(os.path.split(content_name)[-1])[0]
+    style_name = os.path.splitext(os.path.split(style_name)[-1])[0]
+    filename = style_name +"_"+content_name + '.jpg'
+    # make output dir
+    # model_name = os.path.splitext(os.path.split(model_name)[-1])[0]
+    output_dir = os.path.join(image_folder, "output")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    return os.path.join(output_dir, filename)
